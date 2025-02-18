@@ -18,10 +18,12 @@ import java.util.Optional;
 public class TeamEventListenService {
 
     private final ITeamRepository teamRepository;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public TeamEventListenService(ITeamRepository teamRepository) {
+    public TeamEventListenService(ITeamRepository teamRepository, ObjectMapper objectMapper) {
         this.teamRepository = teamRepository;
+        this.objectMapper = objectMapper;
     }
 
     @KafkaListener(topics = "${env.kafka.topicEvent}")
@@ -30,7 +32,7 @@ public class TeamEventListenService {
         switch (eventType) {
             case "CREATE_TEAM":
                 try {
-                    Team team = new ObjectMapper().readValue(payload, Team.class);
+                    Team team = objectMapper.readValue(payload, Team.class);
                     teamRepository.save(team);
                 } catch (JsonProcessingException e) {
                     System.err.println("Error parsing Person JSON: " + e.getMessage());
@@ -38,7 +40,7 @@ public class TeamEventListenService {
                 break;
             case "SET_STUDENT":
                 try {
-                    TeamPerson teamPerson = new ObjectMapper().readValue(payload, TeamPerson.class);
+                    TeamPerson teamPerson = objectMapper.readValue(payload, TeamPerson.class);
                     Optional<Team> optionalTeam = teamRepository.findById(teamPerson.teamElementId());
                     optionalTeam.ifPresent(team -> {
                         team.getStudentsElementId().add(teamPerson.personElementId());
@@ -50,7 +52,7 @@ public class TeamEventListenService {
                 break;
             case "SET_LEADER":
                 try {
-                    TeamPerson teamPerson = new ObjectMapper().readValue(payload, TeamPerson.class);
+                    TeamPerson teamPerson = objectMapper.readValue(payload, TeamPerson.class);
                     Optional<Team> optionalTeam = teamRepository.findById(teamPerson.teamElementId());
                     optionalTeam.ifPresent(team -> {
                         team.setLeaderElementId(teamPerson.personElementId());
@@ -62,7 +64,7 @@ public class TeamEventListenService {
                 break;
             case "REMOVE_STUDENT":
                 try {
-                    TeamPerson teamPerson = new ObjectMapper().readValue(payload, TeamPerson.class);
+                    TeamPerson teamPerson = objectMapper.readValue(payload, TeamPerson.class);
                     Optional<Team> optionalTeam = teamRepository.findById(teamPerson.teamElementId());
                     optionalTeam.ifPresent(team -> {
                         team.getStudentsElementId().remove(teamPerson.personElementId());
@@ -74,7 +76,7 @@ public class TeamEventListenService {
                 break;
             case "REMOVE_LEADER":
                 try {
-                    TeamPerson teamPerson = new ObjectMapper().readValue(payload, TeamPerson.class);
+                    TeamPerson teamPerson = objectMapper.readValue(payload, TeamPerson.class);
                     Optional<Team> optionalTeam = teamRepository.findById(teamPerson.teamElementId());
                     optionalTeam.ifPresent(team -> {
                         team.setLeaderElementId(null);
@@ -86,7 +88,7 @@ public class TeamEventListenService {
                 break;
             case "REMOVE_PEOPLE":
                 try {
-                    TeamPerson teamPerson = new ObjectMapper().readValue(payload, TeamPerson.class);
+                    TeamPerson teamPerson = objectMapper.readValue(payload, TeamPerson.class);
                     Optional<Team> optionalTeam = teamRepository.findById(teamPerson.teamElementId());
                     optionalTeam.ifPresent(team -> {
                         team.setStudentsElementId(Collections.emptyList());
@@ -98,7 +100,7 @@ public class TeamEventListenService {
                 break;
             case "UPDATE_TEAM":
                 try {
-                    Team team = new ObjectMapper().readValue(payload, Team.class);
+                    Team team = objectMapper.readValue(payload, Team.class);
                     Optional<Team> optionalTeam = teamRepository.findById(team.getId());
                     optionalTeam.ifPresent(existingTeam -> {
                         team.setLeaderElementId(existingTeam.getLeaderElementId());
